@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Proche</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Figtree:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#F6F4FF; --surface:#FFFFFF; --ink:#1B2150; --muted:#4F557F; --line:#CFCBEA;
+  --love:#D93A63; --friend:#128C82; --btn:#1B2150; --btnink:#FFFFFF;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#12163A; --surface:#1B2150; --ink:#F1EFFF; --muted:#B3B7DE; --line:#323A7A;
+    --love:#D93A63; --friend:#128C82; --btn:#F1EFFF; --btnink:#12163A;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#12163A; --surface:#1B2150; --ink:#F1EFFF; --muted:#B3B7DE; --line:#323A7A;
+  --love:#D93A63; --friend:#128C82; --btn:#F1EFFF; --btnink:#12163A;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:1.0625rem;line-height:1.55}
+main{max-width:30rem;margin:0 auto;padding:1.5rem 1.25rem 3rem}
+.brand,h1,h2{font-family:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif}
+.brand{font-weight:800;font-size:1.25rem;margin-bottom:1.5rem}
+h1{font-size:clamp(2rem,8vw,2.8rem);font-weight:800;line-height:1.1;letter-spacing:-.02em;margin:0 0 .75rem}
+h2{font-size:1.5rem;font-weight:600;line-height:1.2;margin:0 0 .75rem}
+p{margin:0 0 1rem}
+.muted{color:var(--muted)}
+.small{font-size:.9rem}
+.btn{display:block;width:100%;margin-top:.7rem;padding:.95rem 1rem;border-radius:.65rem;border:2px solid var(--btn);background:var(--btn);color:var(--btnink);font:600 1.05rem "Figtree",system-ui,sans-serif;cursor:pointer;text-align:center}
+.btn.love{background:var(--love);border-color:var(--love);color:#fff}
+.btn.friend{background:var(--friend);border-color:var(--friend);color:#fff}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn:focus-visible{outline:3px solid var(--love);outline-offset:3px}
+.qr{background:#fff;padding:.6rem;border-radius:.7rem;max-width:16rem;margin:1rem auto}
+.qr svg{display:block;width:100%;height:auto}
+.link{word-break:break-all;font-size:.8rem;color:var(--muted);text-align:center}
+.pct{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-size:4.5rem;line-height:1;text-align:center;margin:.5rem 0}
+.center{text-align:center}
+.step{font-size:.9rem;color:var(--muted);margin-bottom:.5rem}
+</style>
+</head>
+<body>
+<main>
+  <div class="brand">Proche</div>
+  <div id="app" aria-live="polite"></div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script>
+(function(){
+  var BASE = "https://bahmohammad41-debug.github.io/proche/";
+  var Q = [
+    "J’aime les soirées animées plutôt que les soirées calmes.",
+    "Je planifie à l’avance plutôt que d’improviser.",
+    "Je dis franchement ce que je pense, même si c’est gênant.",
+    "La famille passe avant tout le reste.",
+    "J’adore l’aventure et les voyages.",
+    "J’ai besoin de temps seul(e) pour me ressourcer.",
+    "L’humour est essentiel dans une relation.",
+    "Je suis très attaché(e) à mes traditions.",
+    "Je règle un désaccord tout de suite plutôt que d’attendre.",
+    "Je préfère rester à la maison plutôt que sortir."
+  ];
+  var LABELS = ["Pas du tout","Plutôt non","Neutre","Plutôt oui","Tout à fait"];
+  var W = {amour:[1,1,2,3,1,1,2,2,2,1], amitie:[2,1,1,1,2,1,3,1,1,2]};
+  var app = document.getElementById("app");
+  var mem = {}, qi = 0, qacc = "", ignoreInc = false, lastLink = "";
+
+  function get(k){ var v = null; try { v = localStorage.getItem(k); } catch(e){} return v || mem[k] || null; }
+  function set(k, v){ mem[k] = v; try { localStorage.setItem(k, v); } catch(e){} }
+  function name(m){ return m === "amour" ? "Amour" : "Amitié"; }
+  function letter(m){ return m === "amour" ? "l" : "f"; }
+  function btn(cls, act, txt, d){
+    return '<button class="btn ' + cls + '" data-a="' + act + '"' + (d !== undefined ? ' data-d="' + d + '"' : '') + '>' + txt + '</button>';
+  }
+  function inc(){
+    if (ignoreInc) return null;
+    var m = /^#([lf])([1-5]{10})$/.exec(location.hash);
+    return m ? {mode: m[1] === "l" ? "amour" : "amitie", ans: m[2]} : null;
+  }
+  function qrSvg(text){
+    try {
+      var q = qrcode(0, "M"); q.addData(text); q.make();
+      var n = q.getModuleCount(), p = "";
+      for (var r = 0; r < n; r++) for (var c = 0; c < n; c++) if (q.isDark(r, c)) p += "M" + (c+2) + " " + (r+2) + "h1v1h-1z";
+      return '<div class="qr"><svg viewBox="0 0 ' + (n+4) + ' ' + (n+4) + '" role="img" aria-label="Code à scanner"><rect width="100%" height="100%" fill="#fff"/><path d="' + p + '" fill="#000"/></svg></div>';
+    } catch(e){ return ""; }
+  }
+  function score(a, b, w){
+    var s = 0, t = 0;
+    for (var i = 0; i < 10; i++){ s += w[i] * (1 - Math.abs(+a[i] - +b[i]) / 4); t += w[i]; }
+    return Math.round(s / t * 100);
+  }
+
+  function quiz(){
+    var h = '<div class="step">Question ' + (qi+1) + ' sur 10</div><h2>' + Q[qi] + '</h2>';
+    for (var v = 1; v <= 5; v++) h += btn("", "q", LABELS[v-1], v);
+    app.innerHTML = h;
+  }
+  function home(){
+    app.innerHTML = '<h1>Es-tu compatible ?</h1>' +
+      '<p class="muted">Choisis ce que tu cherches. L’autre personne scanne ton code avec l’appareil photo de son téléphone, et le résultat s’affiche.</p>' +
+      btn("love", "share", "Amour", "amour") + btn("friend", "share", "Amitié", "amitie") +
+      btn("ghost", "invite", "Faire scanner le site à quelqu’un") + btn("ghost", "redo", "Refaire le questionnaire");
+  }
+  function share(m){
+    lastLink = BASE + "#" + letter(m) + get("ans");
+    app.innerHTML = '<h2>Fais scanner ce code</h2>' +
+      '<p class="muted">Mode choisi : ' + name(m) + '. L’autre personne ouvre l’appareil photo de son téléphone et le pointe vers ce code.</p>' +
+      qrSvg(lastLink) + '<p class="link">' + lastLink + '</p>' +
+      btn("", "send", "Envoyer le lien à la place") + btn("ghost", "home", "Retour");
+  }
+  function invite(){
+    lastLink = BASE;
+    app.innerHTML = '<h2>Invite quelqu’un</h2><p class="muted">Cette personne scanne ce code avec l’appareil photo de son téléphone pour ouvrir Proche.</p>' +
+      qrSvg(BASE) + '<p class="link">' + BASE + '</p>' +
+      btn("", "send", "Envoyer le lien") + btn("ghost", "home", "Retour");
+  }
+  function pick(i){
+    app.innerHTML = '<h2>Que choisis-tu ?</h2><p class="muted">L’autre personne a choisi ' + name(i.mode) + '. Et toi ?</p>' +
+      btn("love", "pick", "Amour", "amour") + btn("friend", "pick", "Amitié", "amitie") +
+      btn("ghost", "home", "Annuler");
+  }
+  function result(m){
+    var i = inc(); if (!i) return home();
+    if (i.mode !== m){
+      app.innerHTML = '<h2>Pas le même choix</h2><p class="muted">Vous avez choisi ' + name(m) + ' et l’autre personne a choisi ' + name(i.mode) + '. Recommencez avec le même choix.</p>' + btn("", "pick-again", "Choisir à nouveau");
+      return;
+    }
+    var s = score(get("ans"), i.ans, W[m]);
+    var verdict = s >= 80 ? "Très compatibles !" : s >= 65 ? "Compatibles" : "Peu compatibles";
+    lastLink = BASE + "#" + letter(m) + get("ans");
+    var col = m === "amour" ? "var(--love)" : "var(--friend)";
+    app.innerHTML = '<p class="center muted">En ' + name(m) + '</p><div class="pct" style="color:' + col + '">' + s + ' %</div>' +
+      '<h2 class="center">' + verdict + '</h2>' +
+      '<p class="muted small center">Pour que l’autre personne voie aussi ce résultat, fais-lui scanner ce code.</p>' +
+      qrSvg(lastLink) + btn("", "send", "Envoyer le lien à la place") + btn("ghost", "home", "Nouveau test");
+  }
+  function route(){
+    var mine = get("ans");
+    if (!mine || mine.length !== 10){ quiz(); return; }
+    var i = inc();
+    if (i) pick(i); else home();
+  }
+
+  app.addEventListener("click", function(e){
+    var b = e.target.closest("button[data-a]"); if (!b) return;
+    var a = b.dataset.a, d = b.dataset.d;
+    if (a === "q"){
+      qacc += d; qi++;
+      if (qi === 10){ set("ans", qacc); qi = 0; qacc = ""; route(); } else quiz();
+    } else if (a === "redo"){ qi = 0; qacc = ""; quiz(); }
+    else if (a === "share"){ share(d); }
+    else if (a === "invite"){ invite(); }
+    else if (a === "pick"){ result(d); }
+    else if (a === "pick-again"){ var i = inc(); if (i) pick(i); else home(); }
+    else if (a === "home"){ ignoreInc = true; home(); }
+    else if (a === "send"){
+      if (navigator.share){
+        navigator.share({title: "Proche", text: "Teste notre compatibilité avec Proche", url: lastLink}).catch(function(){});
+      } else if (navigator.clipboard){
+        navigator.clipboard.writeText(lastLink).then(function(){ b.textContent = "Lien copié"; }, function(){ b.textContent = "Copie le lien affiché"; });
+      } else { b.textContent = "Copie le lien affiché"; }
+    }
+  });
+  window.addEventListener("hashchange", function(){ ignoreInc = false; route(); });
+  route();
+})();
+</script>
+</body>
+</html>
